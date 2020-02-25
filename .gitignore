@@ -1,5 +1,6 @@
-# Ignore folder containing capture data
+# Ignore folder containing capture data and plots
 /data
+/figures
 
 #ignore .venv
 /.venv
