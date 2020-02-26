@@ -68,7 +68,10 @@ def get_vendors(myDict):
         try:
             vendor = mac.lookup(key)
         except:
-            vendor = key
+            if key == 'ff:ff:ff:ff:ff:ff':
+                vendor = 'Broadcast'
+            else:
+                vendor = key
 
         if vendor not in vendorDict:
             vendorDict[vendor] = amount
@@ -113,7 +116,7 @@ def getPresenceOverTime():
 # vendor lookup api https://macvendors.com/
 
 
-cap.apply_on_packets(add_data_to_dict, packet_count=500)
+cap.apply_on_packets(add_data_to_dict, packet_count=5000)
 # cap.apply_on_packets(add_data_to_dict)
 print('')  # newline to end the progress updates
 
@@ -133,18 +136,15 @@ plt.savefig('figures/' + now, format='eps')
 plt.close()
 
 print(str(len(list(macTimeDict.keys()))) + ' MAC addresses collected')
-targetMac = list(macTimeDict.keys())[5]
-data1 = macTimeDict[targetMac]
-plt.bar(data1.keys(), data1.values())
-plt.xticks(rotation=45, ha="right")
-plt.tight_layout()
-plt.savefig('figures/' + now + '-mac:' + targetMac, format='eps')
+# targetMac = list(macTimeDict.keys())[5]
+# data1 = macTimeDict[targetMac]
+# plt.bar(data1.keys(), data1.values())
+# plt.xticks(rotation=45, ha="right")
+# plt.tight_layout()
+# plt.savefig('figures/' + now + '-mac:' + targetMac, format='eps')
 
-# somedict = dict(raymond='red', rachel='blue', matthew='green')
-# with open('mycsvfile.csv','wb') as f:
-#     w = csv.writer(f)
-#     w.writerows(somedict.items())
 
+print('Plotting and exporting csv files...', end='')
 for targetMac in macTimeDict:
     d = macTimeDict[targetMac]
     path = 'figures/'+now+'-macTime'
@@ -152,9 +152,15 @@ for targetMac in macTimeDict:
     if not os.path.exists(path):
         os.makedirs(path)
 
-    with open(path+'/'+targetMac + '.csv','w') as f:
+    with open(path+'/'+targetMac + '.csv', 'w') as f:
         w = csv.writer(f)
         w.writerows(d.items())
 
+    plt.bar(d.keys(), d.values())
+    plt.xticks(rotation=45, ha="right")
+    plt.tight_layout()
+    plt.savefig(path + '/' + targetMac, format='eps')
+    plt.close()
 
+print('done!')
 print('-------------------------\n\n')
