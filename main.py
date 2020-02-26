@@ -28,10 +28,11 @@ mac.load_vendors()
 
 print('\n----------------------------------')
 
-cap = pyshark.FileCapture('data/mycapture.pcapng',keep_packets=False)
+cap = pyshark.FileCapture('data/mycapture.pcapng', keep_packets=False)
 
 # wlan layer: wlan
 # sniff time: sniff_time
+
 
 def add_data_to_dict(packet):
     global counter
@@ -48,11 +49,11 @@ def add_data_to_dict(packet):
     if time not in timeDict:
         timeDict[time] = [key]
     else:
-        if key not in timeDict[time]: # remove duplicate entries
+        if key not in timeDict[time]:  # remove duplicate entries
             timeDict[time].append(key)
 
     if counter % 100 == 0:
-        print('#',end='')
+        print('#', end='')
     if counter % 5000 == 0:
         print('!!')
 
@@ -63,7 +64,7 @@ def get_vendors(myDict):
     print('getting vendors: ')
     for key in keys:
         amount = myDict[key]
-        
+
         try:
             vendor = mac.lookup(key)
         except:
@@ -73,30 +74,34 @@ def get_vendors(myDict):
             vendorDict[vendor] = amount
         else:
             vendorDict[vendor] += amount
-        print('#',end='')
+        print('#', end='')
     print('')
     return vendorDict
 
+
 def getPresenceOverTime():
     macs = list(dataDict.keys())
-    macTimeDict = {} # {mac : {DateTime: True/False}} t/f indicates if mac address was present at that time
+    # {mac : {DateTime: True/False}} t/f indicates if mac address was present at that time
+    macTimeDict = {}
 
-    for ti in timeDict: # ti is time string
-        macs_in_ti = timeDict[ti] # all mac addresses that occured on this timestamp
+    for ti in timeDict:  # ti is time string
+        # all mac addresses that occured on this timestamp
+        macs_in_ti = timeDict[ti]
 
         for mac in macs_in_ti:
             if mac not in macTimeDict:
-                macTimeDict[mac] = {ti:True}
+                macTimeDict[mac] = {ti: True}
             else:
-                macTimeDict[mac].update({ti:True}) # add or create timestamp true
+                # add or create timestamp true
+                macTimeDict[mac].update({ti: True})
 
-        macs_not_in_ti = list(set(macs)- set(macs_in_ti))
-        for mac in macs_not_in_ti: # add false for all mac adresses not in timestamp
+        macs_not_in_ti = list(set(macs) - set(macs_in_ti))
+        for mac in macs_not_in_ti:  # add false for all mac adresses not in timestamp
             if mac not in macTimeDict:
-                macTimeDict[mac] = {ti:False}
+                macTimeDict[mac] = {ti: False}
             else:
-                macTimeDict[mac].update({ti:False}) # add or create timestamp true
-
+                # add or create timestamp true
+                macTimeDict[mac].update({ti: False})
 
         if len(list(set(macs)-set(list(macTimeDict.keys())))) != 0:
             print('somethings wrong.....')
@@ -107,29 +112,49 @@ def getPresenceOverTime():
 # source address: sa
 # vendor lookup api https://macvendors.com/
 
-cap.apply_on_packets(add_data_to_dict,packet_count=500)
+
+cap.apply_on_packets(add_data_to_dict, packet_count=500)
 # cap.apply_on_packets(add_data_to_dict)
-print('') # newline to end the progress updates
+print('')  # newline to end the progress updates
 
 macTimeDict = getPresenceOverTime()
 vendors = get_vendors(dataDict)
 
-print('#MAC collected == #vendors: ' + str(sum(dataDict.values()) == sum(vendors.values())))
+print('#MAC collected == #vendors: ' +
+      str(sum(dataDict.values()) == sum(vendors.values()))
+      )
 
 # print('vendors:')
 # print(vendors)
-plt.bar(vendors.keys(),vendors.values())
-plt.xticks(rotation=45,ha="right")
+plt.bar(vendors.keys(), vendors.values())
+plt.xticks(rotation=45, ha="right")
 plt.tight_layout()
-plt.savefig('figures/' + now,format='eps')
+plt.savefig('figures/' + now, format='eps')
 plt.close()
 
 print(str(len(list(macTimeDict.keys()))) + ' MAC addresses collected')
 targetMac = list(macTimeDict.keys())[5]
 data1 = macTimeDict[targetMac]
-plt.bar(data1.keys(),data1.values())
-plt.xticks(rotation=45,ha="right")
+plt.bar(data1.keys(), data1.values())
+plt.xticks(rotation=45, ha="right")
 plt.tight_layout()
-plt.savefig('figures/' + now + '-mac:' + targetMac,format='eps')
-print('-------------------------\n\n')
+plt.savefig('figures/' + now + '-mac:' + targetMac, format='eps')
 
+# somedict = dict(raymond='red', rachel='blue', matthew='green')
+# with open('mycsvfile.csv','wb') as f:
+#     w = csv.writer(f)
+#     w.writerows(somedict.items())
+
+for targetMac in macTimeDict:
+    d = macTimeDict[targetMac]
+    path = 'figures/'+now+'-macTime'
+
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    with open(path+'/'+targetMac + '.csv','w') as f:
+        w = csv.writer(f)
+        w.writerows(d.items())
+
+
+print('-------------------------\n\n')
