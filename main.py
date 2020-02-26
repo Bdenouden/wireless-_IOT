@@ -16,10 +16,6 @@ if not os.path.exists('figures'):
 
 dataDict = {}
 timeDict = {}
-macTimeDict = {}
-# dataDict = [
-#   {MAC : {ra_amount: ra_amount, sa_amount: sa_amount, sniff_times: [sniff_times]}}
-# ]
 now = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 counter = 0
 
@@ -38,11 +34,32 @@ def add_data_to_dict(packet):
     global counter
     wlan = packet.wlan
 
-    key = wlan.ra
+    try:
+        key = wlan.ta
+    except:
+        return
+
     if key not in dataDict:
         dataDict[key] = 1
     else:
         dataDict[key] = dataDict[key] + 1
+    
+    
+
+#
+# dataDict = {MAC_address:{
+#       total:#total
+#       retry:#retry
+#   }
+# }
+#
+# macproperties = dataDict[myMac] ( = {total:...., retry:.....})
+# macproperties[total] = #total
+# percentage = macproperties[retry]/macproperties[total]
+# 
+
+
+    
     counter += 1
 
     time = packet.sniff_time.strftime("%d-%m-%Y %H:%M:%S")
@@ -61,7 +78,7 @@ def add_data_to_dict(packet):
 def get_vendors(myDict):
     vendorDict = {}
     keys = myDict.keys()
-    print('getting vendors: ')
+    print('getting vendors....',end='')
     for key in keys:
         amount = myDict[key]
 
@@ -77,8 +94,7 @@ def get_vendors(myDict):
             vendorDict[vendor] = amount
         else:
             vendorDict[vendor] += amount
-        print('#', end='')
-    print('')
+    print('done!')
     return vendorDict
 
 
@@ -123,44 +139,49 @@ print('')  # newline to end the progress updates
 macTimeDict = getPresenceOverTime()
 vendors = get_vendors(dataDict)
 
-print('#MAC collected == #vendors: ' +
-      str(sum(dataDict.values()) == sum(vendors.values()))
-      )
+print('Plotting and exporting csv files...', end='')
+with open('figures/'+now+'-vendordata.csv', 'w') as f:
+    w = csv.writer(f)
+    w.writerows(vendors.items())
+
+
+filter_vendor={}
+for vendor in vendors:
+    if vendors[vendor] >= 5:
+        filter_vendor[vendor] =  vendors[vendor]
+
+
+# print('#MAC collected == #vendors: ' +
+#       str(sum(dataDict.values()) == sum(filter_vendors.values()))
+#       )
 
 # print('vendors:')
 # print(vendors)
-plt.bar(vendors.keys(), vendors.values())
+plt.bar(filter_vendor.keys(), filter_vendor.values())
 plt.xticks(rotation=45, ha="right")
 plt.tight_layout()
 plt.savefig('figures/' + now, format='eps')
 plt.close()
 
 print(str(len(list(macTimeDict.keys()))) + ' MAC addresses collected')
-# targetMac = list(macTimeDict.keys())[5]
-# data1 = macTimeDict[targetMac]
-# plt.bar(data1.keys(), data1.values())
-# plt.xticks(rotation=45, ha="right")
-# plt.tight_layout()
-# plt.savefig('figures/' + now + '-mac:' + targetMac, format='eps')
 
+# print('Plotting and exporting csv files...', end='')
+# for targetMac in macTimeDict:
+#     d = macTimeDict[targetMac]
+#     path = 'figures/'+now+'-macTime'
 
-print('Plotting and exporting csv files...', end='')
-for targetMac in macTimeDict:
-    d = macTimeDict[targetMac]
-    path = 'figures/'+now+'-macTime'
+#     if not os.path.exists(path):
+#         os.makedirs(path)
 
-    if not os.path.exists(path):
-        os.makedirs(path)
+#     with open(path+'/'+targetMac + '.csv', 'w') as f:
+#         w = csv.writer(f)
+#         w.writerows(d.items())
 
-    with open(path+'/'+targetMac + '.csv', 'w') as f:
-        w = csv.writer(f)
-        w.writerows(d.items())
+#     plt.bar(d.keys(), d.values())
+#     plt.xticks(rotation=45, ha="right")
+#     plt.tight_layout()
+#     plt.savefig(path + '/' + targetMac, format='eps')
+#     plt.close()
 
-    plt.bar(d.keys(), d.values())
-    plt.xticks(rotation=45, ha="right")
-    plt.tight_layout()
-    plt.savefig(path + '/' + targetMac, format='eps')
-    plt.close()
-
-print('done!')
+# print('done!')
 print('-------------------------\n\n')
