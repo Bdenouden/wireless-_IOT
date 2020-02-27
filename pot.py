@@ -12,17 +12,8 @@ roundOffSecond = 10
 mlu = MacLookup()
 mlu.load_vendors()
 
-sources = []
-tvs = {}
-
-#
-# get a timeplot for each mac address, 5 min interval
-# get total macs per 5 min
-#
-#
-#
-#
-
+# sources = []
+tvs = {} # time versus source
 
 def add_data_to_dict(packet):
     source = packet.source[0:17]
@@ -32,9 +23,9 @@ def add_data_to_dict(packet):
     global time
 
     if source and destination:
-        global sources
+        # global sources
         global tvs
-        sources.append(source)
+        # sources.append(source)
         if time not in tvs:
             tvs[time] = [source]
         else:
