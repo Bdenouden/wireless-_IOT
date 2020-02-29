@@ -4,6 +4,8 @@ import pyshark
 import os
 from mac_vendor_lookup import MacLookup
 import csv
+import requests
+import time
 
 # check if data and figures folder exist, if not create them
 if not os.path.exists('data'):
@@ -24,7 +26,7 @@ mac.load_vendors()
 
 print('\n----------------------------------')
 
-cap = pyshark.FileCapture('data/monitor_test_auls.pcapng', keep_packets=False)
+cap = pyshark.FileCapture('data/dorm/1.pcapng', keep_packets=False)
 
 # wlan layer: wlan
 # sniff time: sniff_time
@@ -82,20 +84,34 @@ def add_data_to_dict(packet):
 def get_vendors(myDict):
     vendorDict = {}
     keys = myDict.keys()
+    url = 'http://api.macvendors.com/'
     print('getting vendors....',end='')
     for key in keys:
         amount = myDict[key]
 
-        try:
-            vendor = mac.lookup(key)
-        except:
+        # try:
+        #     vendor = mac.lookup(key)
+        # except:
+        #     if key == 'ff:ff:ff:ff:ff:ff':
+        #         vendor = 'Broadcast'
+        #     else:
+        #         vendor = key
+
+        r = requests.get(url + key)
+        time.sleep(1)
+        if r.ok:
+            vendor = r.text
+            print(r.text)
+        else:
             if key == 'ff:ff:ff:ff:ff:ff':
                 vendor = 'Broadcast'
             else:
                 vendor = key
 
         if vendor not in vendorDict:
-            vendorDict[vendor] = amount
+            vendorDict[vendor] = {}
+            vendorDict[vendor]['total'] = amount['total']
+            vendorDict[vendor]['retry'] = amount['retry']
         else:
             vendorDict[vendor]['total'] += amount['total']
             vendorDict[vendor]['retry'] += amount['retry']
@@ -145,9 +161,14 @@ macTimeDict = getPresenceOverTime()
 vendors = get_vendors(dataDict)
 
 print('Plotting and exporting csv files...', end='')
+fields = ['addr', 'retry', 'total']
 with open('figures/'+now+'-vendordata.csv', 'w') as f:
-    w = csv.writer(f)
-    w.writerows(vendors.items())
+    w = csv.DictWriter(f,fields)
+    for key,val in vendors.items():
+        row = {'addr': key}
+        row.update(val)
+        w.writerow(row)
+    #w.writerows(vendors.items())
 
 
 filter_vendor={}
