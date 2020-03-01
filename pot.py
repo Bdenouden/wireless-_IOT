@@ -49,7 +49,7 @@ def getVendors(mac):
 
     return rMac
 
-number_of_files = 271
+number_of_files = 288
 for i in range(1,number_of_files+1): 
     # file = 'data/mycapture.pcapng'
     file = 'data/dorm/'+str(i)+'.pcapng'
@@ -67,6 +67,8 @@ print('')
 # for mac in sources:
 #     print(getVendors(mac))
 
+tvs = dict(sorted(tvs.items()))
+
 labels = list(tvs.keys())
 for i in range(len(labels)):
     if not i % 6 == 0:
@@ -74,5 +76,8 @@ for i in range(len(labels)):
 
 plt.bar(tvs.keys(), [len(arr) for arr in tvs.values()], align='center')
 plt.xticks(range(number_of_files),labels, rotation=45, ha="right")
+plt.xlabel('Time (HH:MM:SS)')
+plt.ylabel('# unique mac addresses')
+plt.title('Unique mac addresses over time - Dorm room')
 plt.tight_layout()
 plt.show()
